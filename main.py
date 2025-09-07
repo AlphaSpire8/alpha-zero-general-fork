@@ -2,12 +2,9 @@ import logging
 import coloredlogs
 
 from Coach import Coach
-# 1. 修改导入的游戏类
-# from othello.OthelloGame import OthelloGame as Game  <- 注释掉或删除这一行
-from tictactoe.TicTacToeGame import TicTacToeGame as Game # <- 添加这一行
-
-# 2. 修改导入的神经网络包装器
-from tictactoe.pytorch.NNet import NNetWrapper as nn 
+# 1. --- 导入五子棋的游戏和我们刚创建的PyTorch网络 ---
+from gobang.GobangGame import GobangGame as Game
+from gobang.pytorch.NNet import NNetWrapper as nn
 
 from utils import *
 
@@ -15,29 +12,31 @@ log = logging.getLogger(__name__)
 
 coloredlogs.install(level='INFO')  # Change this to DEBUG to see more info.
 
-# 3. 调整参数以适应井字棋
+# 2. --- 为五子棋调整参数 ---
+# 五子棋更复杂，需要更多的训练、对弈和思考深度
 args = dotdict({
-    'numIters': 20,             # 井字棋简单，不需要1000次迭代
-    'numEps': 20,               # 每次迭代的自我对弈局数，可以适当减少
-    'tempThreshold': 5,
-    'updateThreshold': 0.6,    # 接受新模型的胜率阈值，可以稍微降低
-    'maxlenOfQueue': 20000,    # 经验队列的最大长度
-    'numMCTSSims': 15,          # MCTS模拟次数
-    'arenaCompare': 30,         # 新旧模型对比的局数
+    'numIters': 20,             # 总迭代次数
+    'numEps': 60,              # 每次迭代的自我对弈局数
+    'tempThreshold': 15,
+    'updateThreshold': 0.6,    # 新模型接受阈值
+    'maxlenOfQueue': 200000,    # 经验队列长度
+    'numMCTSSims': 60,          # MCTS模拟次数 (比井字棋要多)
+    'arenaCompare': 40,         # 新旧模型对比局数
     'cpuct': 1,
 
     'checkpoint': './temp/',
-    'load_model': False,        # 第一次训练时设为False
-    'load_folder_file': ('./temp/','best.pth.tar'), # 如果要加载模型，确保路径正确
-    'numItersForTrainExamplesHistory': 30,
+    'load_model': False,
+    'load_folder_file': ('./temp/','best.pth.tar'),
+    'numItersForTrainExamplesHistory': 20,
 })
 
 
 def main():
-    # 4. 修改游戏初始化
     log.info('Loading %s...', Game.__name__)
-    # g = Game(6) # <- 这是奥赛罗的初始化方式，带棋盘大小参数
-    g = Game()    # <- 井字棋的初始化不需要参数
+    # 3. --- 初始化五子棋游戏 ---
+    # GobangGame接收一个棋盘尺寸n作为参数。
+    # 标准是15x15，但为了训练更快，我们可以从一个稍小的棋盘开始，比如 9x9
+    g = Game(15)
 
     log.info('Loading %s...', nn.__name__)
     nnet = nn(g)
